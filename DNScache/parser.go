@@ -1,0 +1,117 @@
+package DNScache
+
+import (
+	"encoding/binary"
+	"fmt"
+)
+
+type DNS struct {
+	Header  DNSHeader
+	Query   DNSQuery
+	Answers []DNSAnswer
+	Info    DNSInfo
+}
+
+type DNSHeader struct {
+	ID    [2]byte
+	Flags [2]byte
+	QC    [2]byte
+	ARC   [2]byte
+	NSC   [2]byte
+	AddRC [2]byte
+}
+
+type DNSQuery struct {
+	QType [2]byte
+	Class [2]byte
+	Name   []byte
+}
+
+type DNSInfo struct {
+	Additional []byte
+}
+
+type DNSAnswer struct {
+	Name  [2]byte
+	QType [2]byte
+	Class [2]byte
+	TTL   [4]byte
+	DSize [2]byte
+	Addr   []byte
+}
+
+func ParseDNSRequest(buf []byte) DNS {
+	var dns DNS
+
+	dns.Header = parseDNSHeader(buf[:12])
+	dns.Query  = parseDNSQuery(buf[12:])
+
+	querySize := 4 + len(dns.Query.Name)
+	dns.Info.Additional = buf[12+querySize:]
+
+	return dns
+}
+
+func ParseDNSResponse(buf []byte) DNS {
+	var dns DNS
+
+	dns.Header = parseDNSHeader(buf[:12])
+	dns.Query  = parseDNSQuery(buf[12:])
+
+	querySize := 4 + len(dns.Query.Name)
+	padding := 12 + querySize
+
+	for i := 0; i < int(binary.BigEndian.Uint16(dns.Header.ARC[:])); i++ {
+		answer := parseDNSAnswer(buf[padding:])
+		dns.Answers = append(dns.Answers, answer)
+		padding += 12 + len(answer.Addr)
+		fmt.Println("Answer:", answer)
+	}
+
+	dns.Info.Additional = buf[padding:]
+
+	return dns
+}
+
+func parseDNSAnswer(data []byte) DNSAnswer {
+	var answer DNSAnswer
+
+	answer.Name  = [2]byte { data[0],  data[1]  }
+	answer.QType = [2]byte { data[2],  data[3]  }
+	answer.Class = [2]byte { data[4],  data[5]  }
+	answer.TTL   = [4]byte { data[6],  data[7], data[8], data[9] }
+	answer.DSize = [2]byte { data[10], data[11] }
+
+	s := binary.BigEndian.Uint16(answer.DSize[:])
+	answer.Addr = data[12:12+s]
+
+	return answer
+}
+
+func parseDNSQuery(data []byte) DNSQuery {
+	var query DNSQuery
+
+	for i, v := range data {
+		if v == 0 {
+			query.Name = data[:i+1]
+			query.QType = [2]byte {data[i+1], data[i+2] }
+			query.Class = [2]byte {data[i+3], data[i+4] }
+			break
+		}
+	}
+
+	return query
+}
+
+func parseDNSHeader(data []byte) DNSHeader {
+	var header DNSHeader
+
+	header.ID    = [2]byte { data[0],  data[1]  }
+	header.Flags = [2]byte { data[2],  data[3]  }
+	header.QC    = [2]byte { data[4],  data[5]  }
+	header.ARC   = [2]byte { data[6],  data[7]  }
+	header.NSC   = [2]byte { data[8],  data[9]  }
+	header.AddRC = [2]byte { data[10], data[11] }
+
+	return header
+}
