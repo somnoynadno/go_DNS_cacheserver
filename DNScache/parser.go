@@ -39,11 +39,11 @@ type DNSAnswer struct {
 	Addr   []byte
 }
 
-func ParseDNSRequest(buf []byte) DNS {
-	var dns DNS
+func NewRequest(buf []byte) *DNS {
+	dns := new(DNS)
 
-	dns.Header = parseDNSHeader(buf[:12])
-	dns.Query  = parseDNSQuery(buf[12:])
+	dns.Header = *newDNSHeader(buf[:12])
+	dns.Query  = *newDNSQuery(buf[12:])
 
 	querySize := 4 + len(dns.Query.Name)
 	dns.Info.Additional = buf[12+querySize:]
@@ -51,17 +51,17 @@ func ParseDNSRequest(buf []byte) DNS {
 	return dns
 }
 
-func ParseDNSResponse(buf []byte) DNS {
-	var dns DNS
+func NewResponse(buf []byte) *DNS {
+	dns := new(DNS)
 
-	dns.Header = parseDNSHeader(buf[:12])
-	dns.Query  = parseDNSQuery(buf[12:])
+	dns.Header = *newDNSHeader(buf[:12])
+	dns.Query  = *newDNSQuery(buf[12:])
 
 	querySize := 4 + len(dns.Query.Name)
 	padding := 12 + querySize
 
 	for i := 0; i < int(binary.BigEndian.Uint16(dns.Header.ARC[:])); i++ {
-		answer := parseDNSAnswer(buf[padding:])
+		answer := *newDNSAnswer(buf[padding:])
 		dns.Answers = append(dns.Answers, answer)
 		padding += 12 + len(answer.Addr)
 	}
@@ -71,8 +71,8 @@ func ParseDNSResponse(buf []byte) DNS {
 	return dns
 }
 
-func parseDNSAnswer(data []byte) DNSAnswer {
-	var answer DNSAnswer
+func newDNSAnswer(data []byte) *DNSAnswer {
+	answer := new(DNSAnswer)
 
 	answer.Name  = [2]byte { data[0],  data[1]  }
 	answer.QType = [2]byte { data[2],  data[3]  }
@@ -86,8 +86,8 @@ func parseDNSAnswer(data []byte) DNSAnswer {
 	return answer
 }
 
-func parseDNSQuery(data []byte) DNSQuery {
-	var query DNSQuery
+func newDNSQuery(data []byte) *DNSQuery {
+	query := new(DNSQuery)
 
 	for i, v := range data {
 		if v == 0 {
@@ -101,8 +101,8 @@ func parseDNSQuery(data []byte) DNSQuery {
 	return query
 }
 
-func parseDNSHeader(data []byte) DNSHeader {
-	var header DNSHeader
+func newDNSHeader(data []byte) *DNSHeader {
+	header := new(DNSHeader)
 
 	header.ID    = [2]byte { data[0],  data[1]  }
 	header.Flags = [2]byte { data[2],  data[3]  }

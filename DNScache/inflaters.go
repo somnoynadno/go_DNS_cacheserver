@@ -1,14 +1,14 @@
 package DNScache
 
 
-func InflateDNS(dns DNS) []byte {
+func (dns DNS) Inflate() []byte {
 	var bytes []byte
 
-	bytes = append(bytes, InflateDNSHeader(dns.Header)...)
-	bytes = append(bytes, InflateDNSQuery(dns.Query)...)
+	bytes = append(bytes, dns.Header.Inflate()...)
+	bytes = append(bytes, dns.Query.Inflate()...)
 
 	for _, a := range dns.Answers {
-		bytes = append(bytes, InflateDNSAnswer(a)...)
+		bytes = append(bytes, a.Inflate()...)
 	}
 
 	bytes = append(bytes, dns.Info.Additional[:]...)
@@ -16,7 +16,7 @@ func InflateDNS(dns DNS) []byte {
 	return bytes
 }
 
-func InflateDNSQuery(query DNSQuery) []byte {
+func (query DNSQuery) Inflate() []byte {
 	var bytes []byte
 
 	bytes = append(bytes, query.Name[:]...)
@@ -26,7 +26,7 @@ func InflateDNSQuery(query DNSQuery) []byte {
 	return bytes
 }
 
-func InflateDNSAnswer(answer DNSAnswer) []byte {
+func (answer DNSAnswer) Inflate() []byte {
 	var bytes []byte
 
 	bytes = append(bytes, answer.Name[:]...)
@@ -39,7 +39,7 @@ func InflateDNSAnswer(answer DNSAnswer) []byte {
 	return bytes
 }
 
-func InflateDNSHeader(header DNSHeader) []byte {
+func (header DNSHeader) Inflate() []byte {
 	var bytes []byte
 
 	bytes = append(bytes, header.ID[:]...)

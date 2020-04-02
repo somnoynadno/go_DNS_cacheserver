@@ -24,7 +24,7 @@ func handleClient(conn *net.UDPConn) {
 		"port": addr.Port,
 	}).Info("UDP connection")
 
-	dns = DNScache.ParseDNSRequest(buf[:size])
+	dns = *DNScache.NewRequest(buf[:size])
 	answers, err := DNScache.CheckAnswerInCache(dns.Query)
 
 	if err != nil {
@@ -42,7 +42,7 @@ func handleClient(conn *net.UDPConn) {
 			log.Error(err)
 			return
 		}
-		dns  = DNScache.ParseDNSResponse(data)
+		dns = *DNScache.NewResponse(data)
 
 		err = DNScache.PutAnswersInCache(dns.Query, dns.Answers)
 		if err != nil {
@@ -61,7 +61,7 @@ func handleClient(conn *net.UDPConn) {
 		dns.Header.ARC = arr
 		dns.Answers = answers
 
-		data = DNScache.InflateDNS(dns)
+		data = dns.Inflate()
 	}
 
 	log.WithFields(logrus.Fields{

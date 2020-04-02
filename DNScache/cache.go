@@ -25,7 +25,7 @@ func RedisHealthCheck() error {
 func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 	client := redis.NewClient(&redisOptions)
 
-	key := base64.StdEncoding.EncodeToString(InflateDNSQuery(query))
+	key := base64.StdEncoding.EncodeToString(query.Inflate())
 
 	_, err := client.Ping().Result()
 	if err != nil {
@@ -48,7 +48,7 @@ func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 		}
 
 		if len(ans) > 0 {
-			dnsAns := parseDNSAnswer(ans)
+			dnsAns := *newDNSAnswer(ans)
 
 			bs := make([]byte, 4)
 			var arr [4]byte
@@ -68,7 +68,7 @@ func PutAnswersInCache(query DNSQuery, answers []DNSAnswer) error {
 	client := redis.NewClient(&redisOptions)
 
 	value := ""
-	key := base64.StdEncoding.EncodeToString(InflateDNSQuery(query))
+	key := base64.StdEncoding.EncodeToString(query.Inflate())
 
 	ttlMin := uint32(7200)
 
@@ -77,7 +77,7 @@ func PutAnswersInCache(query DNSQuery, answers []DNSAnswer) error {
 		if  ttl < ttlMin {
 			ttlMin = ttl
 		}
-		value += base64.StdEncoding.EncodeToString(InflateDNSAnswer(a))
+		value += base64.StdEncoding.EncodeToString(a.Inflate())
 		value += " "
 	}
 
