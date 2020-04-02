@@ -2,7 +2,6 @@ package DNScache
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 type DNS struct {
@@ -65,7 +64,6 @@ func ParseDNSResponse(buf []byte) DNS {
 		answer := parseDNSAnswer(buf[padding:])
 		dns.Answers = append(dns.Answers, answer)
 		padding += 12 + len(answer.Addr)
-		fmt.Println("Answer:", answer)
 	}
 
 	dns.Info.Additional = buf[padding:]

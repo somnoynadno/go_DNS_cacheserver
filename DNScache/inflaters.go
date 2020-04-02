@@ -1,8 +1,5 @@
 package DNScache
 
-import (
-	"fmt"
-)
 
 func InflateDNS(dns DNS) []byte {
 	var bytes []byte
@@ -16,7 +13,6 @@ func InflateDNS(dns DNS) []byte {
 
 	bytes = append(bytes, dns.Info.Additional[:]...)
 
-	fmt.Println(bytes)
 	return bytes
 }
 

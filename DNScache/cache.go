@@ -3,7 +3,6 @@ package DNScache
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"github.com/go-redis/redis"
 	"strings"
 	"time"
@@ -27,11 +26,16 @@ func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 	client := redis.NewClient(&redisOptions)
 
 	key := base64.StdEncoding.EncodeToString(InflateDNSQuery(query))
-	fmt.Println("Key:", key)
+
+	_, err := client.Ping().Result()
+	if err != nil {
+		return nil, err
+	}
 
 	result, err := client.Get(key).Result()
 	ttl, err    := client.TTL(key).Result()
-	if err != nil || ttl == -1 {
+
+	if err != nil || ttl <= 0 {
 		return nil, nil
 	}
 
@@ -40,7 +44,6 @@ func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 	for _, a := range strings.Split(result, " ") {
 		ans, err := base64.StdEncoding.DecodeString(a)
 		if err != nil {
-			fmt.Println(err)
 			return nil, err
 		}
 
