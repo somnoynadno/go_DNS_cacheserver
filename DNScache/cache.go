@@ -16,6 +16,7 @@ var redisOptions = redis.Options{
 
 func RedisHealthCheck() error {
 	client := redis.NewClient(&redisOptions)
+	defer client.Close()
 
 	_, err := client.Ping().Result()
 
@@ -24,6 +25,7 @@ func RedisHealthCheck() error {
 
 func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 	client := redis.NewClient(&redisOptions)
+	defer client.Close()
 
 	key := base64.StdEncoding.EncodeToString(query.Inflate())
 
@@ -66,6 +68,7 @@ func CheckAnswerInCache(query DNSQuery) ([]DNSAnswer, error) {
 
 func PutAnswersInCache(query DNSQuery, answers []DNSAnswer) error {
 	client := redis.NewClient(&redisOptions)
+	defer client.Close()
 
 	value := ""
 	key := base64.StdEncoding.EncodeToString(query.Inflate())
