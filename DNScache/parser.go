@@ -31,7 +31,7 @@ type DNSInfo struct {
 }
 
 type DNSAnswer struct {
-	Name  [2]byte
+	Name   []byte
 	QType [2]byte
 	Class [2]byte
 	TTL   [4]byte
@@ -63,7 +63,7 @@ func NewResponse(buf []byte) *DNS {
 	for i := 0; i < int(binary.BigEndian.Uint16(dns.Header.ARC[:])); i++ {
 		answer := *newDNSAnswer(buf[padding:])
 		dns.Answers = append(dns.Answers, answer)
-		padding += 12 + len(answer.Addr)
+		padding += 10 + len(answer.Addr) + len(answer.Name)
 	}
 
 	dns.Info.Additional = buf[padding:]
@@ -74,14 +74,20 @@ func NewResponse(buf []byte) *DNS {
 func newDNSAnswer(data []byte) *DNSAnswer {
 	answer := new(DNSAnswer)
 
-	answer.Name  = [2]byte { data[0],  data[1]  }
-	answer.QType = [2]byte { data[2],  data[3]  }
-	answer.Class = [2]byte { data[4],  data[5]  }
-	answer.TTL   = [4]byte { data[6],  data[7], data[8], data[9] }
-	answer.DSize = [2]byte { data[10], data[11] }
+	for i, v := range data {
+		if v == 192 {
+			answer.Name = data[:i+2]
 
-	s := binary.BigEndian.Uint16(answer.DSize[:])
-	answer.Addr = data[12:12+s]
+			answer.QType = [2]byte { data[i+2],  data[i+3]  }
+			answer.Class = [2]byte { data[i+4],  data[i+5]  }
+			answer.TTL   = [4]byte { data[i+6],  data[i+7], data[i+8], data[i+9] }
+			answer.DSize = [2]byte { data[i+10], data[i+11] }
+
+			s := binary.BigEndian.Uint16(answer.DSize[:])
+			answer.Addr = data[i+12:i+12+int(s)]
+			break
+		}
+	}
 
 	return answer
 }
