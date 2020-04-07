@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/go-redis/redis"
+	"os"
 	"strings"
 	"time"
 )
 
 var redisOptions = redis.Options{
-	Addr:     "localhost:6379",
+	Addr:     os.Getenv("REDIS_HOST") + ":6379",
 	Password: "",
 	DB:       0,
 }
